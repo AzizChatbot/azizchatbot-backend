@@ -62,6 +62,9 @@ authRouter.post(
       if (!user) {
         return res.status(404).json({ message: "User doesn't exists." });
       }
+      if (!user.password) {
+        return res.status(401).json({ message: "Invalid credentials." });
+      }
       compare(password, user.password, (err, correctPassword) => {
         if (!correctPassword) {
           return res.status(401).json({ message: "Invalid credentials." });
@@ -117,12 +120,10 @@ authRouter.post(
       }
       const resetTokenExists = await resetPassModel.exists({ email: email });
       if (resetTokenExists) {
-        return res
-          .status(409)
-          .json({
-            message:
-              "A reset password request has already been made, try again after a while.",
-          });
+        return res.status(409).json({
+          message:
+            "A reset password request has already been made, try again after a while.",
+        });
       }
       const token = crypto.randomBytes(20).toString("hex");
       await resetPassModel.create({
@@ -210,6 +211,20 @@ authRouter.get(
     } catch {
       return res.status(500).json({ message: "Internal Server Error." });
     }
+  }
+);
+
+authRouter.get(
+  "/google",
+  passport.authenticate("google", { scope: ["profile"] })
+);
+
+authRouter.get(
+  "/google/callback",
+  passport.authenticate("google", { failureRedirect: "/login" }),
+  function (req, res) {
+    // Successful authentication, redirect home.
+    res.redirect("/");
   }
 );
 
