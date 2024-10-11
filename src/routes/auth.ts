@@ -53,7 +53,7 @@ authRouter.post(
 );
 
 authRouter.post(
-  "/login",
+  "/login/password",
   validateData(userLoginSchema),
   async (req: Request, res: Response) => {
     try {
@@ -215,15 +215,14 @@ authRouter.get(
 );
 
 authRouter.get(
-  "/google",
-  passport.authenticate("google", { scope: ["profile"] })
+  "/login/google",
+  passport.authenticate("google", { hd: "stu.kau.edu.sa" })
 );
 
 authRouter.get(
-  "/google/callback",
+  "/login/google/callback",
   passport.authenticate("google", { failureRedirect: "/login" }),
   function (req, res) {
-    // Successful authentication, redirect home.
     res.redirect("/");
   }
 );

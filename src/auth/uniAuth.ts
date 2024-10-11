@@ -4,8 +4,8 @@ import usersModel from "../db/usersModel";
 const authOptions = {
   clientID: process.env.UNI_CID || "",
   clientSecret: process.env.UNI_SECRET || "",
-  callbackURL: `${process.env.CLIENT_URL}/api/auth/google/callback` || "",
-  scope: ["profile", "email"],
+  callbackURL: `${process.env.CLIENT_URL}/api/auth/login/google/callback` || "",
+  scope: ["profile", "email", "openid"],
 };
 
 const uniAuth = new Strategy(
