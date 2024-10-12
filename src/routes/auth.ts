@@ -216,14 +216,15 @@ authRouter.get(
 
 authRouter.get(
   "/login/google",
-  passport.authenticate("google", { hd: "stu.kau.edu.sa" })
+  passport.authenticate("google", { hd: "stu.kau.edu.sa", session: false })
 );
 
 authRouter.get(
   "/login/google/callback",
   passport.authenticate("google", { failureRedirect: "/login" }),
   function (req, res) {
-    res.redirect("/");
+    console.log(req.user);
+    //res.redirect("/");
   }
 );
 
