@@ -15,8 +15,8 @@ const usersSchema = new mongoose.Schema(
 );
 
 usersSchema.pre("save", async function (next) {
-  if (typeof this.password !== "string") {
-    const hashedPassword = await hash(this.password || '', 10);
+  if (typeof this.password == "string") {
+    const hashedPassword = await hash(this.password || "", 10);
     this.password = hashedPassword;
     next();
   }

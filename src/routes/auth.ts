@@ -215,16 +215,21 @@ authRouter.get(
 );
 
 authRouter.get(
-  "/login/google",
+  "/login/university",
   passport.authenticate("google", { hd: "stu.kau.edu.sa", session: false })
 );
 
 authRouter.get(
-  "/login/google/callback",
-  passport.authenticate("google", { failureRedirect: "/login" }),
-  function (req, res) {
-    console.log(req.user);
-    //res.redirect("/");
+  "/login/university/callback",
+  passport.authenticate("google", {
+    failureRedirect: "/login/university",
+    session: false,
+  }),
+  function (req: Request["body"], res: Response) {
+    const token = jwt.sign({ id: req.user._id }, process.env.JWT_SECRET || "", {
+      expiresIn: "1h",
+    });
+    return res.json({ token: token });
   }
 );
 
