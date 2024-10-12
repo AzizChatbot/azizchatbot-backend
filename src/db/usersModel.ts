@@ -8,16 +8,18 @@ const usersSchema = new mongoose.Schema(
     },
     name: { type: String, required: true },
     email: { type: String, required: true, unique: true },
-    password: { type: String, required: true },
+    password: { type: String },
     isVerified: { type: Boolean, required: true, default: false },
   },
   { collection: "users" }
 );
 
 usersSchema.pre("save", async function (next) {
-  const hashedPassword = await hash(this.password, 10);
-  this.password = hashedPassword;
-  next();
+  if (typeof this.password == "string") {
+    const hashedPassword = await hash(this.password || "", 10);
+    this.password = hashedPassword;
+    next();
+  }
 });
 
 usersSchema.pre(["updateOne", "findOneAndUpdate"], async function (next) {

@@ -10,7 +10,8 @@ import chatRouter from "./routes/chat";
 import profileRouter from "./routes/profile";
 
 import passport from "passport";
-import jwtAuth from "./jwtAuth";
+import jwtAuth from "./auth/jwtAuth";
+import uniAuth from "./auth/uniAuth";
 
 const port = 4000;
 const app = express();
@@ -25,8 +26,11 @@ app.use("/profile", profileRouter);
 
 async function main() {
   passport.use(jwtAuth);
+  passport.use(uniAuth);
+
   const mongoConnString = process.env.MONGO_CONN || "";
   await mongoose.connect(mongoConnString);
+
   app.listen(port, () => {
     console.log(`Server is running on http://localhost:${port}`);
   });
