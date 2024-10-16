@@ -1,6 +1,8 @@
 import { Router, Request, Response } from "express";
 
 import passport from "passport";
+import jwt from "jsonwebtoken";
+import { generateAccessToken } from "../utils/jwt";
 
 import usersModel from "../db/usersModel";
 import resetPassModel from "../db/resetPassModel";
@@ -181,5 +183,30 @@ authRouter.get(
     }
   }
 );
+
+authRouter.post("/refresh-token", async (req: Request, res: Response) => {
+  const { refreshToken } = req.body;
+
+  if (!refreshToken) {
+    return res.status(400).json({ message: "Refresh token is required." });
+  }
+
+  try {
+    const decoded = jwt.verify(
+      refreshToken,
+      process.env.JWT_REFRESH_SECRET || ""
+    ) as { id: string };
+    const user = await usersModel.findById(decoded.id);
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found." });
+    }
+
+    const newAccessToken = generateAccessToken(user._id.toString());
+    return res.json({ accessToken: newAccessToken });
+  } catch (error) {
+    return res.status(401).json({ message: "Invalid refresh token." });
+  }
+});
 
 export default authRouter;

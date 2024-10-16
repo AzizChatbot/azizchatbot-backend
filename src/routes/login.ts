@@ -7,7 +7,6 @@ import usersModel from "../db/usersModel";
 
 import { compare } from "bcrypt";
 
-import jwt from "jsonwebtoken";
 import passport from "passport";
 import { generateAccessToken, generateRefreshToken } from "../utils/jwt";
 
