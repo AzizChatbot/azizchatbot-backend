@@ -12,6 +12,7 @@ import profileRouter from "./routes/profile";
 import passport from "passport";
 import jwtAuth from "./auth/jwtAuth";
 import uniAuth from "./auth/uniAuth";
+import loginRouter from "./routes/login";
 
 const port = 4000;
 const app = express();
@@ -21,6 +22,7 @@ app.use(cors());
 app.use(passport.initialize());
 
 app.use("/auth", authRouter);
+app.use("/auth/login", loginRouter);
 app.use("/chat", chatRouter);
 app.use("/profile", profileRouter);
 

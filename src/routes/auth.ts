@@ -1,8 +1,5 @@
 import { Router, Request, Response } from "express";
 
-import { compare } from "bcrypt";
-
-import jwt from "jsonwebtoken";
 import passport from "passport";
 
 import usersModel from "../db/usersModel";
@@ -13,7 +10,6 @@ import mail from "../utils/mail";
 
 import { validateData } from "../middleware/validationMiddleware";
 import {
-  userLoginSchema,
   userRegistrationSchema,
   forgotPasswordSchema,
   resetPasswordSchema,
@@ -46,34 +42,6 @@ authRouter.post(
         text: `Click on the link to verify your email: ${process.env.CLIENT_URL}/verify-email/${user._id}`,
       });
       return res.status(201).json({ message: "User created." });
-    } catch {
-      return res.status(500).json({ message: "Internal Server Error." });
-    }
-  }
-);
-
-authRouter.post(
-  "/login/password",
-  validateData(userLoginSchema),
-  async (req: Request, res: Response) => {
-    try {
-      const { email, password } = req.body;
-      const user = await usersModel.findOne({ email: email });
-      if (!user) {
-        return res.status(404).json({ message: "User doesn't exists." });
-      }
-      if (!user.password) {
-        return res.status(401).json({ message: "Invalid credentials." });
-      }
-      compare(password, user.password, (err, correctPassword) => {
-        if (!correctPassword) {
-          return res.status(401).json({ message: "Invalid credentials." });
-        }
-        const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET || "", {
-          expiresIn: "1h",
-        });
-        return res.json({ token: token });
-      });
     } catch {
       return res.status(500).json({ message: "Internal Server Error." });
     }
@@ -211,25 +179,6 @@ authRouter.get(
     } catch {
       return res.status(500).json({ message: "Internal Server Error." });
     }
-  }
-);
-
-authRouter.get(
-  "/login/university",
-  passport.authenticate("google", { hd: "stu.kau.edu.sa", session: false })
-);
-
-authRouter.get(
-  "/login/university/callback",
-  passport.authenticate("google", {
-    failureRedirect: "/login/university",
-    session: false,
-  }),
-  function (req: Request["body"], res: Response) {
-    const token = jwt.sign({ id: req.user._id }, process.env.JWT_SECRET || "", {
-      expiresIn: "1h",
-    });
-    return res.json({ token: token });
   }
 );
 
