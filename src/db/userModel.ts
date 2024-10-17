@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
 import { hash } from "bcrypt";
-const usersSchema = new mongoose.Schema(
+const userSchema = new mongoose.Schema(
   {
     _id: {
       type: mongoose.Schema.Types.ObjectId,
@@ -11,10 +11,10 @@ const usersSchema = new mongoose.Schema(
     password: { type: String },
     isVerified: { type: Boolean, required: true, default: false },
   },
-  { collection: "users" }
+  { collection: "User" }
 );
 
-usersSchema.pre("save", async function (next) {
+userSchema.pre("save", async function (next) {
   if (typeof this.password == "string") {
     const hashedPassword = await hash(this.password || "", 10);
     this.password = hashedPassword;
@@ -22,7 +22,7 @@ usersSchema.pre("save", async function (next) {
   }
 });
 
-usersSchema.pre(["updateOne", "findOneAndUpdate"], async function (next) {
+userSchema.pre(["updateOne", "findOneAndUpdate"], async function (next) {
   const update = this.getUpdate() as { password?: string };
   if (update.password) {
     const hashedPassword = await hash(update.password, 10);
@@ -31,5 +31,5 @@ usersSchema.pre(["updateOne", "findOneAndUpdate"], async function (next) {
   next();
 });
 
-const usersModel = mongoose.model("users", usersSchema);
-export default usersModel;
+const User = mongoose.model("User", userSchema);
+export default User;

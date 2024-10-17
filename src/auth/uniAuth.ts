@@ -1,5 +1,5 @@
 import { Strategy } from "passport-google-oauth20";
-import usersModel from "../db/usersModel";
+import User from "../db/userModel";
 
 const authOptions = {
   clientID: process.env.UNI_CID || "",
@@ -15,11 +15,11 @@ const uniAuth = new Strategy(
     if (!profile.emails) {
       return done(new Error("No emails found"), false);
     }
-    const user = await usersModel.findOne({ email: profile.emails[0].value });
+    const user = await User.findOne({ email: profile.emails[0].value });
     if (user) {
       return done(null, user);
     }
-    const newUser = await usersModel.create({
+    const newUser = await User.create({
       name: profile.displayName,
       email: profile.emails[0].value,
       isVerified: true,

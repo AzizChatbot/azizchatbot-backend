@@ -3,7 +3,7 @@ import { Router, Request, Response } from "express";
 import { validateData } from "../middleware/validationMiddleware";
 import { userLoginSchema } from "../schemas/authSchema";
 
-import usersModel from "../db/usersModel";
+import User from "../db/userModel";
 
 import { compare } from "bcrypt";
 
@@ -18,7 +18,7 @@ loginRouter.post(
   async (req: Request, res: Response) => {
     try {
       const { email, password } = req.body;
-      const user = await usersModel.findOne({ email: email });
+      const user = await User.findOne({ email: email });
       if (!user) {
         return res.status(404).json({ message: "User doesn't exists." });
       }

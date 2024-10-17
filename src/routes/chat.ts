@@ -2,9 +2,8 @@ import { Router, Request, Response } from "express";
 
 import passport from "passport";
 
-import conversationModel from "../db/conversationModel";
-
-import chat from "../utils/openai";
+import Chat from "../db/chatModel";
+import openaiAPI from "../utils/openai";
 
 import { validateData } from "../middleware/validationMiddleware";
 import {
@@ -25,7 +24,7 @@ chatRouter.post(
       const { userMessage } = req.body;
       const { chatId } = req.params;
 
-      const conversation = await conversationModel.findOne({
+      const conversation = await Chat.findOne({
         _id: chatId,
         userId,
       });
@@ -36,7 +35,7 @@ chatRouter.post(
       conversation.messages.push({ role: "user", content: userMessage });
       await conversation.save();
 
-      const response = await chat.create({
+      const response = await openaiAPI.create({
         model: "gpt-4o-mini",
         messages: conversation.messages,
       });
@@ -63,7 +62,7 @@ chatRouter.get(
     try {
       const { chatId } = req.params;
       const userId = req.user._id;
-      const conversations = await conversationModel.findOne({
+      const conversations = await Chat.findOne({
         _id: chatId,
         userId,
       });
@@ -87,8 +86,8 @@ chatRouter.get(
   async (req: Request["body"], res: Response) => {
     try {
       const userId = req.user._id;
-      const conversations = await conversationModel.find(
-        { userId },
+      const conversations = await Chat.findById(
+        userId,
         { chatId: 1, chatName: 1 } // Return chatId and chatName only
       );
       if (!conversations) {
@@ -110,7 +109,7 @@ chatRouter.post(
       const userId = req.user._id;
       const { initialMessage } = req.body;
 
-      const genChatName = await chat.create({
+      const genChatName = await openaiAPI.create({
         model: "gpt-4o-mini",
         messages: [
           {
@@ -123,7 +122,7 @@ chatRouter.post(
       });
       const chatName = genChatName.choices[0].message.content;
 
-      const conversation = await conversationModel.create({
+      const conversation = await Chat.create({
         userId,
         chatName,
         messages: [
@@ -136,7 +135,7 @@ chatRouter.post(
         ],
       });
 
-      const response = await chat.create({
+      const response = await openaiAPI.create({
         model: "gpt-4o-mini",
         messages: conversation.messages,
       });

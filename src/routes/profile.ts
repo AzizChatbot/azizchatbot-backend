@@ -5,7 +5,7 @@ import { updateUserInfoSchema } from "../schemas/profileSchema";
 
 import passport from "passport";
 
-import usersModel from "../db/usersModel";
+import User from "../db/userModel";
 
 const profileRouter: Router = Router();
 
@@ -19,14 +19,14 @@ profileRouter.put(
       const { email } = req.body;
 
       if (email) {
-        const emailUsed = await usersModel.findOne({ email });
+        const emailUsed = await User.findOne({ email });
         if (emailUsed) {
           return res.status(409).json({ message: "Email already in use." });
         }
         req.body.isVerified = false;
       }
 
-      const updatedUser = await usersModel.findByIdAndUpdate(
+      const updatedUser = await User.findByIdAndUpdate(
         userId,
         { $set: req.body },
         { new: true, runValidators: true }
@@ -43,7 +43,7 @@ profileRouter.get(
   async (req: Request["body"], res: Response) => {
     try {
       const userId = req.user._id;
-      const user = await usersModel.findById(userId, { password: 0 });
+      const user = await User.findById(userId, { password: 0 });
       return res.json(user);
     } catch {
       return res.status(500).json({ message: "Internal Server Error." });

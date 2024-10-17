@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
 
-const conversationSchema = new mongoose.Schema(
+const chatSchema = new mongoose.Schema(
   {
     _id: {
       type: mongoose.Schema.Types.ObjectId,
@@ -20,8 +20,8 @@ const conversationSchema = new mongoose.Schema(
       },
     ],
   },
-  { _id: false }
+  { collection: "Chat" }
 );
 
-const conversationModel = mongoose.model("Conversation", conversationSchema);
-export default conversationModel;
+const Chat = mongoose.model("Chat", chatSchema);
+export default Chat;

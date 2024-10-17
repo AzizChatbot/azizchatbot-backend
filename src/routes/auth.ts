@@ -4,8 +4,8 @@ import passport from "passport";
 import jwt from "jsonwebtoken";
 import { generateAccessToken } from "../utils/jwt";
 
-import usersModel from "../db/usersModel";
-import resetPassModel from "../db/resetPassModel";
+import User from "../db/userModel";
+import PasswordReset from "../db/passwordResetModel";
 
 import crypto from "crypto";
 import mail from "../utils/mail";
@@ -26,13 +26,13 @@ authRouter.post(
   async (req: Request, res: Response) => {
     try {
       const { name, email, password } = req.body;
-      const userExists = await usersModel.exists({ email: email });
+      const userExists = await User.exists({ email: email });
       if (userExists) {
         return res
           .status(409)
           .json({ message: "A User with this email already exists." });
       }
-      const user = await usersModel.create({
+      const user = await User.create({
         name: name,
         email: email,
         password: password,
@@ -82,13 +82,13 @@ authRouter.post(
   async (req: Request, res: Response) => {
     try {
       const { email } = req.body;
-      const user = await usersModel.exists({ email: email });
+      const user = await User.exists({ email: email });
       if (!user) {
         return res
           .status(404)
           .json({ message: "No user associated with this email address." });
       }
-      const resetTokenExists = await resetPassModel.exists({ email: email });
+      const resetTokenExists = await PasswordReset.exists({ email: email });
       if (resetTokenExists) {
         return res.status(409).json({
           message:
@@ -96,7 +96,7 @@ authRouter.post(
         });
       }
       const token = crypto.randomBytes(20).toString("hex");
-      await resetPassModel.create({
+      await PasswordReset.create({
         token: token,
         email: email,
       });
@@ -121,15 +121,15 @@ authRouter.post(
   async (req: Request, res: Response) => {
     try {
       const { token, password } = req.body;
-      const resetToken = await resetPassModel.findOne({ token: token });
+      const resetToken = await PasswordReset.findOne({ token: token });
       if (!resetToken) {
         return res.status(404).json({ message: "Invalid token." });
       }
-      await usersModel.updateOne(
+      await User.updateOne(
         { email: resetToken.email },
         { password: password }
       );
-      await resetPassModel.deleteOne({ token: token });
+      await PasswordReset.deleteOne({ token: token });
       return res.status(200).json({ message: "Password reset successfully." });
     } catch {
       return res.status(500).json({ message: "Internal Server Error." });
@@ -143,7 +143,7 @@ authRouter.post(
   async (req: Request["body"], res: Response) => {
     try {
       const userId = req.user._id;
-      const user = await usersModel.findOne({ _id: userId });
+      const user = await User.findById(userId);
       if (!user) {
         return res.status(404).json({ message: "User not found." });
       }
@@ -169,14 +169,14 @@ authRouter.get(
   async (req: Request, res: Response) => {
     try {
       const { id } = req.params;
-      const user = await usersModel.findOne({ _id: id });
+      const user = await User.findById(id);
       if (!user) {
         return res.status(404).json({ message: "User not found." });
       }
       if (user.isVerified) {
         return res.status(409).json({ message: "Email already verified." });
       }
-      await usersModel.updateOne({ _id: id }, { isVerified: true });
+      await User.updateOne({ _id: id }, { isVerified: true });
       return res.status(200).json({ message: "Email verified." });
     } catch {
       return res.status(500).json({ message: "Internal Server Error." });
@@ -196,7 +196,7 @@ authRouter.post("/refresh-token", async (req: Request, res: Response) => {
       refreshToken,
       process.env.JWT_REFRESH_SECRET || ""
     ) as { id: string };
-    const user = await usersModel.findById(decoded.id);
+    const user = await User.findById(decoded.id);
 
     if (!user) {
       return res.status(404).json({ message: "User not found." });
