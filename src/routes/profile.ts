@@ -26,7 +26,7 @@ profileRouter.put(
         req.body.isVerified = false;
       }
 
-      const updatedUser = await User.findByIdAndUpdate(
+      User.findByIdAndUpdate(
         userId,
         { $set: req.body },
         { new: true, runValidators: true }
