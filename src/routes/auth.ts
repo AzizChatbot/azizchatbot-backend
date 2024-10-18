@@ -40,7 +40,7 @@ authRouter.post(
       mail.sendMail({
         from: process.env.MAIL_SENDER,
         to: email,
-        subject: "AzizHelper - Verify Email",
+        subject: "Aziz Chatbot - Verify Email",
         text: `Click on the link to verify your email: ${process.env.CLIENT_URL}/verify-email/${user._id}`,
       });
       return res.status(201).json({ message: "User created." });
@@ -58,18 +58,6 @@ authRouter.post(
       return res
         .clearCookie("token")
         .json({ message: "Logged out successfully." });
-    } catch {
-      return res.status(500).json({ message: "Internal Server Error." });
-    }
-  }
-);
-
-authRouter.get(
-  "/authenticated",
-  passport.authenticate("jwt", { session: false }),
-  async (req: Request, res: Response) => {
-    try {
-      return res.status(200).json({ message: "Authenticated." });
     } catch {
       return res.status(500).json({ message: "Internal Server Error." });
     }
@@ -103,7 +91,7 @@ authRouter.post(
       mail.sendMail({
         from: process.env.MAIL_SENDER,
         to: email,
-        subject: "AzizHelper - Reset Password",
+        subject: "Aziz Chatbot - Reset Password",
         text: `Click on the link to reset your password: ${process.env.CLIENT_URL}/reset-password/?t=${token}`,
       });
       return res
@@ -125,10 +113,7 @@ authRouter.post(
       if (!resetToken) {
         return res.status(404).json({ message: "Invalid token." });
       }
-      await User.updateOne(
-        { email: resetToken.email },
-        { password: password }
-      );
+      await User.updateOne({ email: resetToken.email }, { password: password });
       await PasswordReset.deleteOne({ token: token });
       return res.status(200).json({ message: "Password reset successfully." });
     } catch {
@@ -153,7 +138,7 @@ authRouter.post(
       mail.sendMail({
         from: process.env.MAIL_SENDER,
         to: user.email,
-        subject: "AzizHelper - Verify Email",
+        subject: "Aziz Chatbot - Verify Email",
         text: `Click on the link to verify your email: ${process.env.CLIENT_URL}/verify-email/${userId}`,
       });
       return res.status(200).json({ message: "Verification email sent." });
