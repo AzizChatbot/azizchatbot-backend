@@ -16,23 +16,33 @@ profileRouter.put(
   async (req: Request["body"], res: Response) => {
     try {
       const userId = req.user._id;
-      const { email } = req.body;
+      const { name, email } = req.body;
+
+      const updateData: { [key: string]: any } = {};
+
+      if (name) {
+        updateData.name = name;
+      }
 
       if (email) {
         const emailUsed = await User.findOne({ email });
         if (emailUsed) {
           return res.status(409).json({ message: "Email already in use." });
         }
-        req.body.isVerified = false;
+        updateData.email = email;
+        updateData.isVerified = false;
       }
 
       User.findByIdAndUpdate(
         userId,
-        { $set: req.body },
-        { new: true, runValidators: true }
+        { $set: updateData },
+        { runValidators: true }
       );
-    } catch {
-      res.status(500).json({ message: "Internal server error" });
+
+      return res.json({ message: "User updated successfully." });
+    } catch (error) {
+      console.error(error);
+      return res.status(500).json({ message: "Internal server error" });
     }
   }
 );

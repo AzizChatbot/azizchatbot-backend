@@ -1,6 +1,8 @@
 import { Request, Response, NextFunction } from "express";
 import { z, ZodError } from "zod";
-export function validateData(schema: z.ZodObject<any, any>) {
+export function validateData(
+  schema: z.ZodObject<any, any> | z.ZodEffects<z.ZodObject<any, any>>
+) {
   return (req: Request, res: Response, next: NextFunction) => {
     try {
       const combinedData = { ...req.body, ...req.params, ...req.query };
