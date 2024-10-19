@@ -31,7 +31,21 @@ loginRouter.post(
         }
         const accessToken = generateAccessToken(user._id.toString());
         const refreshToken = generateRefreshToken(user._id.toString());
-        return res.json({ accessToken, refreshToken });
+
+        // Delete the password from the user object befdore sending it back
+        delete user.password;
+
+        return res.json({
+          user: {
+            user,
+          },
+          access: {
+            token: accessToken,
+          },
+          refresh: {
+            token: refreshToken,
+          },
+        });
       });
     } catch {
       return res.status(500).json({ message: "Internal Server Error." });
