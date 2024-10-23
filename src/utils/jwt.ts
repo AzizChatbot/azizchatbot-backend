@@ -5,9 +5,9 @@ const generateToken = (userId: string, secret: string, expiresIn: string) => {
 };
 
 export const generateAccessToken = (userId: string) => {
-  return generateToken(userId, process.env.JWT_SECRET || "", "1h");
+  return generateToken(userId, process.env.JWT_SECRET || "", process.env.JWT_ExpiresIn || "15m");
 };
 
 export const generateRefreshToken = (userId: string) => {
-  return generateToken(userId, process.env.JWT_REFRESH_SECRET || "", "30d");
+  return generateToken(userId, process.env.JWT_REFRESH_SECRET || "", process.env.JWT_REFRESH_ExpiresIn || "30d");
 };

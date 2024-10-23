@@ -53,8 +53,18 @@ profileRouter.get(
   async (req: Request["body"], res: Response) => {
     try {
       const userId = req.user._id;
-      const user = await User.findById(userId, { password: 0 });
-      return res.json(user);
+      const user = await User.findById(userId, { password: 0, __v: 0 });
+      if (!user) {
+        return res.status(404).json({ message: "User not found." });
+      }
+      return res.json({
+        user: {
+          id: user._id,
+          name: user.name,
+          email: user.email,
+          isVerified: user.isVerified,
+        },
+      });
     } catch {
       return res.status(500).json({ message: "Internal Server Error." });
     }

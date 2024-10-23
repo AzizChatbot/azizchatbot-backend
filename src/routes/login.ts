@@ -10,6 +10,8 @@ import { compare } from "bcrypt";
 import passport from "passport";
 import { generateAccessToken, generateRefreshToken } from "../utils/jwt";
 
+import ms from "ms";
+
 const loginRouter: Router = Router();
 
 loginRouter.post(
@@ -32,18 +34,24 @@ loginRouter.post(
         const accessToken = generateAccessToken(user._id.toString());
         const refreshToken = generateRefreshToken(user._id.toString());
 
-        // Delete the password from the user object befdore sending it back
-        delete user.password;
-
         return res.json({
           user: {
-            user,
+            id: user._id,
+            email: user.email,
+            name: user.name,
+            isVerified: user.isVerified,
           },
           access: {
             token: accessToken,
+            expiresAt: new Date(
+              Date.now() + ms(process.env.JWT_ExpiresIn || "")
+            ).toISOString(),
           },
           refresh: {
             token: refreshToken,
+            expiresAt: new Date(
+              Date.now() + ms(process.env.JWT_REFRESH_ExpiresIn || "")
+            ).toISOString(),
           },
         });
       });

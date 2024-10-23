@@ -18,6 +18,8 @@ import {
   verifyEmailSchema,
 } from "../schemas/authSchema";
 
+import ms from "ms";
+
 const authRouter: Router = Router();
 
 authRouter.post(
@@ -56,7 +58,7 @@ authRouter.post(
   (req: Request, res: Response) => {
     try {
       return res
-        .clearCookie("token")
+        .clearCookie("auth.access_token")
         .json({ message: "Logged out successfully." });
     } catch {
       return res.status(500).json({ message: "Internal Server Error." });
@@ -187,8 +189,14 @@ authRouter.post("/refresh-token", async (req: Request, res: Response) => {
       return res.status(404).json({ message: "User not found." });
     }
 
-    const newAccessToken = generateAccessToken(user._id.toString());
-    return res.json({ accessToken: newAccessToken });
+    return res.json({
+      access: {
+        token: generateAccessToken(user._id.toString()),
+        expiresAt: new Date(
+          Date.now() + ms(process.env.JWT_ExpiresIn || "")
+        ).toISOString(),
+      },
+    });
   } catch (error) {
     return res.status(401).json({ message: "Invalid refresh token." });
   }
