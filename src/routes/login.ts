@@ -73,8 +73,16 @@ loginRouter.get(
   }),
   function (req: Request["body"], res: Response) {
     const accessToken = generateAccessToken(req.user._id);
+    const accessTokenExpiresAt = new Date(
+      Date.now() + ms(process.env.JWT_ExpiresIn || "")
+    ).toISOString();
     const refreshToken = generateRefreshToken(req.user._id);
-    return res.json({ accessToken, refreshToken });
+    const refreshTokenExpiresAt = new Date(
+      Date.now() + ms(process.env.JWT_REFRESH_ExpiresIn || "")
+    ).toISOString();
+    return res.redirect(
+      `${process.env.CLIENT_URL}/auth?accessToken=${accessToken}&accessTokenExpiresAt=${accessTokenExpiresAt}&refreshToken=${refreshToken}&refreshTokenExpiresAt=${refreshTokenExpiresAt}`
+    );
   }
 );
 
