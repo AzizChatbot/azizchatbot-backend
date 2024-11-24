@@ -24,28 +24,28 @@ chatRouter.post(
       const { userMessage } = req.body;
       const { chatId } = req.params;
 
-      const conversation = await Chat.findOne({
+      const chat = await Chat.findOne({
         _id: chatId,
         userId,
       });
-      if (!conversation) {
+      if (!chat) {
         return res.status(404).json({ message: "Chat not found." });
       }
 
-      conversation.messages.push({ role: "user", content: userMessage });
-      await conversation.save();
+      chat.messages.push({ role: "user", content: userMessage });
+      await chat.save();
 
       const response = await openaiAPI.create({
         model: "gpt-4o-mini",
-        messages: conversation.messages,
+        messages: chat.messages,
       });
 
       const assistantMessage = response.choices[0].message.content;
-      conversation.messages.push({
+      chat.messages.push({
         role: "assistant",
         content: assistantMessage,
       });
-      await conversation.save();
+      await chat.save();
 
       return res.json({ assistantMessage });
     } catch (err) {
@@ -62,15 +62,15 @@ chatRouter.get(
     try {
       const { chatId } = req.params;
       const userId = req.user._id;
-      const conversations = await Chat.findOne({
+      const chat = await Chat.findOne({
         _id: chatId,
         userId,
       });
-      if (!conversations) {
-        return res.status(404).json({ message: "Conversation not found." });
+      if (!chat) {
+        return res.status(404).json({ message: "Chat not found." });
       }
       // Filter out messages with role: 'system'
-      const filteredMessages = conversations.messages.filter(
+      const filteredMessages = chat.messages.filter(
         (message) => message.role !== "system"
       );
       return res.json(filteredMessages);
@@ -86,14 +86,14 @@ chatRouter.get(
   async (req: Request["body"], res: Response) => {
     try {
       const userId = req.user._id;
-      const conversations = await Chat.findById(
+      const chats = await Chat.find(
         userId,
-        { chatId: 1, chatName: 1 } // Return chatId and chatName only
+        { _id: 1, chatName: 1 } // Return the chat id and chatName only
       );
-      if (!conversations) {
-        return res.status(404).json({ message: "No conversations found." });
+      if (!chats) {
+        return res.status(404).json({ message: "No chats found." });
       }
-      return res.json(conversations);
+      return res.json(chats);
     } catch (err) {
       return res.status(500).json({ message: "Internal Server Error." });
     }
@@ -122,7 +122,7 @@ chatRouter.post(
       });
       const chatName = genChatName.choices[0].message.content;
 
-      const conversation = await Chat.create({
+      const chat = await Chat.create({
         userId,
         chatName,
         messages: [
@@ -137,18 +137,18 @@ chatRouter.post(
 
       const response = await openaiAPI.create({
         model: "gpt-4o-mini",
-        messages: conversation.messages,
+        messages: chat.messages,
       });
 
-      conversation.messages.push({
+      chat.messages.push({
         role: "assistant",
         content: response.choices[0].message.content,
       });
-      await conversation.save();
+      await chat.save();
 
       res.status(201).json({
         message: "Chat created successfully",
-        chatId: conversation._id,
+        chatId: chat._id,
       });
     } catch (err) {
       return res.status(500).json({ error: "Internal Server Error" });
