@@ -87,7 +87,9 @@ chatRouter.get(
     try {
       const userId = req.user._id;
       const chats = await Chat.find(
-        userId,
+        {
+          userId,
+        },
         { _id: 1, chatName: 1 } // Return the chat id and chatName only
       );
       if (!chats) {
