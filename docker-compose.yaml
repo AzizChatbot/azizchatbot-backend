@@ -1,0 +1,14 @@
+services:
+  aziz-back:
+    build: .
+    container_name: aziz-back
+    restart: always
+    environment:
+      - NODE_ENV=production
+      - PORT=4149
+    networks:
+      - aziz-network
+
+networks:
+  aziz-network:
+    external: true

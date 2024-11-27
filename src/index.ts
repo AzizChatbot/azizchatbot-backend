@@ -14,7 +14,7 @@ import jwtAuth from "./auth/jwtAuth";
 import uniAuth from "./auth/uniAuth";
 import loginRouter from "./routes/login";
 
-const port = 4000;
+const port = process.env.PORT || 4000;
 const app = express();
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
