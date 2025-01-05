@@ -1,9 +1,8 @@
 import { Router, Request, Response } from "express";
 
-import passport from "passport";
-
-import Chat from "../db/chatModel";
 import openaiAPI from "../utils/openai";
+
+import { db } from "../utils/db";
 
 import { validateData } from "../middleware/validationMiddleware";
 import {
@@ -12,40 +11,65 @@ import {
   sendMessageSchema,
 } from "../schemas/chatSchema";
 
+import { fromNodeHeaders } from "better-auth/node";
+import { auth } from "../utils/auth";
+
 const chatRouter: Router = Router();
 
 chatRouter.post(
   "/:chatId/messages",
-  passport.authenticate("jwt", { session: false }),
   validateData(sendMessageSchema),
-  async (req: Request["body"], res: Response) => {
+  async (req: Request, res: Response) => {
     try {
-      const userId = req.user._id;
+      const session = await auth.api.getSession({
+        headers: fromNodeHeaders(req.headers),
+      });
+      if (!session) {
+        return res.status(401).json({ message: "Unauthorized." });
+      }
       const { userMessage } = req.body;
       const { chatId } = req.params;
 
-      const chat = await Chat.findOne({
-        _id: chatId,
-        userId,
+      const chat = await db.chat.findFirst({
+        where: {
+          id: chatId,
+          userId: session.user.id,
+        },
       });
       if (!chat) {
         return res.status(404).json({ message: "Chat not found." });
       }
 
-      chat.messages.push({ role: "user", content: userMessage });
-      await chat.save();
+      await db.message.create({
+        data: {
+          chatId: chat.id,
+          role: "user",
+          content: userMessage,
+        },
+      });
+
+      const dbMessages = await db.message.findMany({
+        where: {
+          chatId: chat.id,
+        },
+        orderBy: {
+          timestamp: "asc",
+        },
+      });
 
       const response = await openaiAPI.create({
         model: "gpt-4o-mini",
-        messages: chat.messages,
+        messages: dbMessages,
       });
 
       const assistantMessage = response.choices[0].message.content;
-      chat.messages.push({
-        role: "assistant",
-        content: assistantMessage,
+      await db.message.create({
+        data: {
+          chatId: chat.id,
+          role: "assistant",
+          content: assistantMessage as string,
+        },
       });
-      await chat.save();
 
       return res.json({ assistantMessage });
     } catch (err) {
@@ -56,21 +80,35 @@ chatRouter.post(
 
 chatRouter.get(
   "/:chatId/messages",
-  passport.authenticate("jwt", { session: false }),
   validateData(getChatSchema),
-  async (req: Request["body"], res: Response) => {
+  async (req: Request, res: Response) => {
     try {
+      const session = await auth.api.getSession({
+        headers: fromNodeHeaders(req.headers),
+      });
+      if (!session) {
+        return res.status(401).json({ message: "Unauthorized." });
+      }
       const { chatId } = req.params;
-      const userId = req.user._id;
-      const chat = await Chat.findOne({
-        _id: chatId,
-        userId,
+      const chat = await db.chat.findFirst({
+        where: {
+          id: chatId,
+          userId: session.user.id,
+        },
       });
       if (!chat) {
         return res.status(404).json({ message: "Chat not found." });
       }
+      const dbMessages = await db.message.findMany({
+        where: {
+          chatId: chat.id,
+        },
+        orderBy: {
+          timestamp: "asc",
+        },
+      });
       // Filter out messages with role: 'system'
-      const filteredMessages = chat.messages.filter(
+      const filteredMessages = dbMessages.filter(
         (message) => message.role !== "system"
       );
       return res.json(filteredMessages);
@@ -80,35 +118,43 @@ chatRouter.get(
   }
 );
 
-chatRouter.get(
-  "/",
-  passport.authenticate("jwt", { session: false }),
-  async (req: Request["body"], res: Response) => {
-    try {
-      const userId = req.user._id;
-      const chats = await Chat.find(
-        {
-          userId,
-        },
-        { _id: 1, chatName: 1 } // Return the chat id and chatName only
-      );
-      if (!chats) {
-        return res.status(404).json({ message: "No chats found." });
-      }
-      return res.json(chats);
-    } catch (err) {
-      return res.status(500).json({ message: "Internal Server Error." });
+chatRouter.get("/", async (req: Request, res: Response) => {
+  try {
+    const session = await auth.api.getSession({
+      headers: fromNodeHeaders(req.headers),
+    });
+    if (!session) {
+      return res.status(401).json({ message: "Unauthorized." });
     }
+    const chats = await db.chat.findMany({
+      where: {
+        userId: session.user.id,
+      },
+      select: {
+        id: true,
+        chatName: true,
+      },
+    });
+    if (!chats) {
+      return res.status(404).json({ message: "No chats found." });
+    }
+    return res.json(chats);
+  } catch (err) {
+    return res.status(500).json({ message: "Internal Server Error." });
   }
-);
+});
 
 chatRouter.post(
   "/",
-  passport.authenticate("jwt", { session: false }),
   validateData(createChatSchema),
-  async (req: Request["body"], res: Response) => {
+  async (req: Request, res: Response) => {
     try {
-      const userId = req.user._id;
+      const session = await auth.api.getSession({
+        headers: fromNodeHeaders(req.headers),
+      });
+      if (!session) {
+        return res.status(401).json({ message: "Unauthorized." });
+      }
       const { initialMessage } = req.body;
 
       const genChatName = await openaiAPI.create({
@@ -117,40 +163,54 @@ chatRouter.post(
           {
             role: "system",
             content:
-              "Generate a suitable name for this chat based on the context.",
+              "You are an AI assistant that generates creative and contextually relevant chat names. Based on the given context, provide a short and catchy name for the chat that reflects its purpose or participants. If the context includes themes, key topics, or unique characteristics, incorporate them into the name. Ensure the name is appropriate, clear, and easy to remember, also, avoid using any personal information or sensitive data in the name, and don't include double quotes in the name.",
           },
           { role: "user", content: initialMessage },
         ],
       });
-      const chatName = genChatName.choices[0].message.content;
+      const chatName = genChatName.choices[0].message.content as string;
 
-      const chat = await Chat.create({
-        userId,
-        chatName,
-        messages: [
-          {
-            role: "system",
-            content:
-              "You are an assistant that only responds to messages related to King Abdulaziz University (KAU)",
-          },
-          { role: "user", content: initialMessage },
-        ],
+      const chat = await db.chat.create({
+        data: {
+          chatName,
+          userId: session.user.id,
+        },
+      });
+
+      const systemMessage = await db.message.create({
+        data: {
+          chatId: chat.id,
+          role: "system",
+          content:
+            "You are an AI assistant that answers user questions related to King Abdulaziz University (KAU), try your best to provide accurate and helpful responses.",
+        },
+      });
+
+      const userMessage = await db.message.create({
+        data: {
+          chatId: chat.id,
+          role: "user",
+          content: initialMessage,
+        },
       });
 
       const response = await openaiAPI.create({
         model: "gpt-4o-mini",
-        messages: chat.messages,
+        messages: [systemMessage, userMessage],
       });
 
-      chat.messages.push({
-        role: "assistant",
-        content: response.choices[0].message.content,
+      const assistantMessage = response.choices[0].message.content;
+      await db.message.create({
+        data: {
+          chatId: chat.id,
+          role: "assistant",
+          content: assistantMessage as string,
+        },
       });
-      await chat.save();
 
       res.status(201).json({
         message: "Chat created successfully",
-        chatId: chat._id,
+        chatId: chat.id,
       });
     } catch (err) {
       return res.status(500).json({ error: "Internal Server Error" });

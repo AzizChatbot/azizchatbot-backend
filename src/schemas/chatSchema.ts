@@ -5,10 +5,10 @@ export const createChatSchema = z.object({
 });
 
 export const sendMessageSchema = z.object({
-  chatId: z.string().regex(/^[0-9a-f]{24}$/),
+  chatId: z.string().uuid(),
   userMessage: z.string(),
 });
 
 export const getChatSchema = z.object({
-  chatId: z.string().regex(/^[0-9a-f]{24}$/),
+  chatId: z.string().uuid(),
 });

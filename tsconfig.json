@@ -11,7 +11,7 @@
     "noUnusedLocals": true,
     "noFallthroughCasesInSwitch": true,
     "sourceMap": true,
-    "types": ["node", "express", "mongoose", "passport", "zod"]
+    "types": ["node", "express", "zod"]
   },
   "include": ["src/**/*.ts"],
   "exclude": ["node_modules", "dist"]
