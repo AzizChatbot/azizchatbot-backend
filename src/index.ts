@@ -13,10 +13,14 @@ const app = express();
 app.use(
   cors({
     origin: process.env.BETTER_AUTH_URL,
+    methods: ["GET", "POST", "PUT", "DELETE"],
     credentials: true,
   })
 );
-app.all(process.env.NODE_ENV == "production" ? "/auth/*" : "/api/auth/*", toNodeHandler(auth));
+app.all(
+  process.env.NODE_ENV == "production" ? "/auth/*" : "/api/auth/*",
+  toNodeHandler(auth)
+);
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
