@@ -1,6 +1,8 @@
 FROM node:22-alpine
 WORKDIR /app
 COPY package.json /app
-RUN yarn install
+RUN corepack enable
+RUN pnpm install
 COPY . /app
-CMD ["yarn","start"]
+RUN pnpm exec prisma generate
+CMD ["pnpm","start"]

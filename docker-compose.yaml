@@ -5,7 +5,7 @@ services:
     restart: always
     environment:
       - NODE_ENV=production
-      - PORT=4149
+      - PORT=6149
     networks:
       - aziz-network
 
