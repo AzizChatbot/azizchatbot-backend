@@ -4,5 +4,4 @@ COPY package.json /app
 RUN corepack enable
 RUN pnpm install
 COPY . /app
-RUN pnpm exec prisma generate
-CMD ["pnpm","start"]
+CMD ["pnpm","start:prod"]

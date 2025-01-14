@@ -5,7 +5,8 @@
   "author": "xAbdaziz",
   "license": "MIT",
   "scripts": {
-    "start": "ts-node src/index.ts"
+    "start": "ts-node src/index.ts",
+    "start:prod": "prisma migrate deploy && pnpm start"
   },
   "dependencies": {
     "@prisma/client": "6.1.0",
