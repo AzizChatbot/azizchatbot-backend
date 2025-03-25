@@ -6,7 +6,7 @@
   "license": "MIT",
   "scripts": {
     "start": "ts-node src/index.ts",
-    "start:prod": "prisma migrate deploy && pnpm start"
+    "start:prod": "prisma generate && pnpm start"
   },
   "dependencies": {
     "@prisma/client": "6.5.0",

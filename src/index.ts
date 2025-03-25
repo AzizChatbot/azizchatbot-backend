@@ -17,10 +17,7 @@ app.use(
     credentials: true,
   })
 );
-app.all(
-  process.env.NODE_ENV == "production" ? "/auth/*" : "/api/auth/*",
-  toNodeHandler(auth)
-);
+app.all("/auth/*", toNodeHandler(auth));
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
