@@ -1,7 +1,5 @@
 import { Router, Request, Response } from "express";
 
-import openaiAPI from "../utils/openai";
-
 import { db } from "../utils/db";
 
 import { validateData } from "../middleware/validationMiddleware";
@@ -13,6 +11,17 @@ import {
 
 import { fromNodeHeaders } from "better-auth/node";
 import { auth } from "../utils/auth";
+
+import axios from "axios";
+
+interface AIResponse {
+  answer: string;
+  score: number;
+}
+
+interface KeywordResponse {
+  keywords: string;
+}
 
 const chatRouter: Router = Router();
 
@@ -40,6 +49,18 @@ chatRouter.post(
         return res.status(404).json({ message: "Chat not found." });
       }
 
+      const assistantMessageReq = await axios.post(
+        `${process.env.AI_URL}/ask`,
+        { question: userMessage }
+      );
+
+      if (assistantMessageReq.status !== 200) {
+        return res.status(500).json({ message: "AI service error." });
+      }
+
+      const assistantMessageRes: AIResponse = assistantMessageReq.data;
+
+      // Save the user message to the database
       await db.message.create({
         data: {
           chatId: chat.id,
@@ -48,30 +69,16 @@ chatRouter.post(
         },
       });
 
-      const dbMessages = await db.message.findMany({
-        where: {
-          chatId: chat.id,
-        },
-        orderBy: {
-          timestamp: "asc",
-        },
-      });
-
-      const response = await openaiAPI.create({
-        model: "gpt-4o-mini",
-        messages: dbMessages,
-      });
-
-      const assistantMessage = response.choices[0].message.content;
+      // Save the assistant message to the database
       await db.message.create({
         data: {
           chatId: chat.id,
           role: "assistant",
-          content: assistantMessage as string,
+          content: assistantMessageRes.answer,
         },
       });
 
-      return res.json({ assistantMessage });
+      return res.json({ assistantMessage: assistantMessageRes.answer });
     } catch (err) {
       return res.status(500).json({ message: "Internal Server Error." });
     }
@@ -157,36 +164,32 @@ chatRouter.post(
       }
       const { initialMessage } = req.body;
 
-      const genChatName = await openaiAPI.create({
-        model: "gpt-4o-mini",
-        messages: [
-          {
-            role: "system",
-            content:
-              "You are an AI assistant that generates creative and contextually relevant chat names. Based on the given context, provide a short and catchy name for the chat that reflects its purpose or participants. If the context includes themes, key topics, or unique characteristics, incorporate them into the name. Ensure the name is appropriate, clear, and easy to remember, also, avoid using any personal information or sensitive data in the name, and don't include double quotes in the name.",
-          },
-          { role: "user", content: initialMessage },
-        ],
+      const genChatName = await axios.post(`${process.env.AI_URL}/keywords`, {
+        question: initialMessage,
       });
-      const chatName = genChatName.choices[0].message.content as string;
+      if (genChatName.status !== 200) {
+        return res.status(500).json({ message: "AI service error." });
+      }
+      const genChatNameRes: KeywordResponse = genChatName.data;
 
       const chat = await db.chat.create({
         data: {
-          chatName,
+          chatName: genChatNameRes.keywords,
           userId: session.user.id,
         },
       });
 
-      const systemMessage = await db.message.create({
-        data: {
-          chatId: chat.id,
-          role: "system",
-          content:
-            "You are an AI assistant that answers user questions related to King Abdulaziz University (KAU), try your best to provide accurate and helpful responses.",
-        },
-      });
+      const assistantMessageReq = await axios.post(
+        `${process.env.AI_URL}/ask`,
+        { question: initialMessage }
+      );
 
-      const userMessage = await db.message.create({
+      if (assistantMessageReq.status !== 200) {
+        return res.status(500).json({ message: "AI service error." });
+      }
+
+      // Save the user message to the database
+      await db.message.create({
         data: {
           chatId: chat.id,
           role: "user",
@@ -194,17 +197,14 @@ chatRouter.post(
         },
       });
 
-      const response = await openaiAPI.create({
-        model: "gpt-4o-mini",
-        messages: [systemMessage, userMessage],
-      });
+      const assistantMessageRes: AIResponse = assistantMessageReq.data;
 
-      const assistantMessage = response.choices[0].message.content;
+      // Save the assistant message to the database
       await db.message.create({
         data: {
           chatId: chat.id,
           role: "assistant",
-          content: assistantMessage as string,
+          content: assistantMessageRes.answer,
         },
       });
 
@@ -213,6 +213,7 @@ chatRouter.post(
         chatId: chat.id,
       });
     } catch (err) {
+      console.error(err);
       return res.status(500).json({ error: "Internal Server Error" });
     }
   }

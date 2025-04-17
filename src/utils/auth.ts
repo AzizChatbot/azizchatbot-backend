@@ -4,13 +4,13 @@ import { db } from "./db";
 
 export const auth = betterAuth({
   appName: "AzizChatbot",
-  basePath: process.env.NODE_ENV == "production" ? "/auth" : "/api/auth",
+  basePath: "/auth",
   database: prismaAdapter(db, {
     provider: "postgresql",
   }),
   emailAndPassword: {
     enabled: true,
-    requireEmailVerification: true,
+    requireEmailVerification: false,
   },
   socialProviders: {
     google: {
