@@ -19,6 +19,7 @@ export const auth = betterAuth({
     sendVerificationEmail: async ({ user, url }) => {
       await mail.sendMail({
         to: user.email,
+        from: process.env.MAIL_SENDER,
         subject: "تأكيد البريد الإلكتروني بعزيز المساعد الذكي",
         html: emailVerificationTemplate(user.name, url),
       });
