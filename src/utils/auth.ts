@@ -1,5 +1,6 @@
 import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
+import { mail, emailVerificationTemplate } from "./mail";
 import { db } from "./db";
 
 export const auth = betterAuth({
@@ -10,7 +11,18 @@ export const auth = betterAuth({
   }),
   emailAndPassword: {
     enabled: true,
-    requireEmailVerification: false,
+    requireEmailVerification: true,
+  },
+  emailVerification: {
+    autoSignInAfterVerification: true,
+    sendOnSignUp: true,
+    sendVerificationEmail: async ({ user, url }) => {
+      await mail.sendMail({
+        to: user.email,
+        subject: "تأكيد البريد الإلكتروني بعزيز المساعد الذكي",
+        html: emailVerificationTemplate(user.name, url),
+      });
+    },
   },
   socialProviders: {
     google: {
