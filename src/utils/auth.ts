@@ -16,12 +16,12 @@ export const auth = betterAuth({
   emailVerification: {
     autoSignInAfterVerification: true,
     sendOnSignUp: true,
-    sendVerificationEmail: async ({ user, url }) => {
+    sendVerificationEmail: async ({ user, url, token }) => {
       await mail.sendMail({
         to: user.email,
         from: process.env.MAIL_SENDER,
         subject: "تأكيد البريد الإلكتروني بعزيز المساعد الذكي",
-        html: emailVerificationTemplate(user.name, url),
+        html: emailVerificationTemplate(user.name, `https://aziz.chat/api/auth/verify-email?token=${token}&callbackURL=/`),
       });
     },
   },
