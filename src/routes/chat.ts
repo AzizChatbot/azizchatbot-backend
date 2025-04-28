@@ -3,6 +3,8 @@ import { Router, Request, Response } from "express";
 import { db } from "../utils/db";
 
 import { validateData } from "../middleware/validationMiddleware";
+import { rateLimitMiddleware } from "../middleware/messagesRateLimit";
+
 import {
   createChatSchema,
   getChatSchema,
@@ -27,6 +29,7 @@ const chatRouter: Router = Router();
 
 chatRouter.post(
   "/:chatId/messages",
+  rateLimitMiddleware,
   validateData(sendMessageSchema),
   async (req: Request, res: Response) => {
     try {
@@ -153,6 +156,7 @@ chatRouter.get("/", async (req: Request, res: Response) => {
 
 chatRouter.post(
   "/",
+  rateLimitMiddleware,
   validateData(createChatSchema),
   async (req: Request, res: Response) => {
     try {

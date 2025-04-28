@@ -9,6 +9,8 @@ import { auth } from "./utils/auth";
 
 import chatRouter from "./routes/chat";
 
+import { initRedis } from "./utils/redis";
+
 const port = process.env.PORT || 4000;
 const app = express();
 app.use(
@@ -26,6 +28,7 @@ app.use(express.json());
 app.use("/chat", chatRouter);
 
 async function main() {
+  await initRedis();
   app.listen(port, () => {
     console.log(`Server is running on http://localhost:${port}`);
   });
