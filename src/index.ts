@@ -1,5 +1,6 @@
 import express from "express";
 import cors from "cors";
+import helmet from "helmet";
 
 import "dotenv/config";
 
@@ -17,6 +18,7 @@ app.use(
     credentials: true,
   })
 );
+app.use(helmet());
 app.all("/auth/*", toNodeHandler(auth));
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
