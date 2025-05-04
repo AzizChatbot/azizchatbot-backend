@@ -1,4 +1,5 @@
 import { betterAuth } from "better-auth";
+import { captcha } from "better-auth/plugins";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import { mail, emailVerificationTemplate } from "./mail";
 import { db } from "./db";
@@ -21,7 +22,10 @@ export const auth = betterAuth({
         to: user.email,
         from: process.env.MAIL_SENDER,
         subject: "تأكيد البريد الإلكتروني بعزيز المساعد الذكي",
-        html: emailVerificationTemplate(user.name, `https://aziz.chat/api/auth/verify-email?token=${token}&callbackURL=/`),
+        html: emailVerificationTemplate(
+          user.name,
+          `https://aziz.chat/api/auth/verify-email?token=${token}&callbackURL=/`
+        ),
       });
     },
   },
@@ -37,4 +41,10 @@ export const auth = betterAuth({
     generateId: false,
   },
   trustedOrigins: [process.env.BETTER_AUTH_URL as string],
+  plugins: [
+    captcha({
+      provider: "cloudflare-turnstile",
+      secretKey: process.env.CAPTCHA_SECRET_KEY as string,
+    }),
+  ],
 });
