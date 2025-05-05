@@ -1,7 +1,7 @@
 import { betterAuth } from "better-auth";
 import { captcha } from "better-auth/plugins";
 import { prismaAdapter } from "better-auth/adapters/prisma";
-import { mail, emailVerificationTemplate } from "./mail";
+import { mail, emailVerificationTemplate, passwordResetTemplate } from "./mail";
 import { db } from "./db";
 
 export const auth = betterAuth({
@@ -13,6 +13,17 @@ export const auth = betterAuth({
   emailAndPassword: {
     enabled: true,
     requireEmailVerification: true,
+    sendResetPassword: async ({ user, url, token }) => {
+      await mail.sendMail({
+        to: user.email,
+        from: process.env.MAIL_SENDER,
+        subject: "إعادة تعيين كلمة المرور بعزيز المساعد الذكي",
+        html: passwordResetTemplate(
+          user.name,
+          `https://aziz.chat/auth/reset-password?token=${token}&callbackURL=/`
+        ),
+      });
+    },
   },
   emailVerification: {
     autoSignInAfterVerification: true,
