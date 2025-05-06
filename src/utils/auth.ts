@@ -52,6 +52,10 @@ export const auth = betterAuth({
     generateId: false,
   },
   trustedOrigins: [process.env.BETTER_AUTH_URL as string],
+  rateLimit: {
+    window: 60,
+    max: 100,
+  },
   plugins: [
     captcha({
       provider: "cloudflare-turnstile",
